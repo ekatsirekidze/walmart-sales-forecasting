@@ -1,0 +1,9 @@
+data/
+.venv/
+mlruns/
+mlartifacts/
+__pycache__/
+.ipynb_checkpoints/
+*.zip
+submission*.csv
+.env

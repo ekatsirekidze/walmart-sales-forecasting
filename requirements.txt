@@ -1,0 +1,15 @@
+# Core (everyone installs these)
+pandas
+numpy
+scikit-learn
+lightgbm
+mlflow
+statsmodels
+matplotlib
+seaborn
+jupyter
+kaggle
+
+# Deep learning models (PatchTST / DLinear / N-BEATS) — install on Kaggle Notebooks (GPU):
+# torch
+# neuralforecast

@@ -30,6 +30,13 @@ LAGS = (39, 46, 51, 52, 53)
 # all big-4 holiday weeks in one index (the holiday blend uses this too)
 BIG_HOLIDAY_WEEKS = SUPER_BOWL.append([LABOR_DAY, THANKSGIVING, CHRISTMAS])
 
+# Blend target weeks: Christmas EXCLUDED. Naive lag-52 copies last year's
+# post-Christmas week, whose pre-Christmas-shopping-day count differs across
+# years (0/1/3 days) — blending there undoes the Christmas-shift fix. Confirmed
+# both on Fold 1 (holiday MAE 2159 -> 2102) and on the leaderboard (blend with
+# Christmas included scored 2604 public vs 2507 without blend).
+BLEND_HOLIDAY_WEEKS = SUPER_BOWL.append([LABOR_DAY, THANKSGIVING])
+
 # Holiday-aligned lags: the big holidays drift across week-of-year numbers,
 # so the plain 52-week lag lands one week off exactly on the 5x-weighted
 # weeks. Align by holiday instead: "this week is Thanksgiving+1 of 2012 ->

@@ -27,6 +27,37 @@ CHRISTMAS = pd.to_datetime(["2010-12-31", "2011-12-30", "2012-12-28", "2013-12-2
 MARKDOWN_COLS = [f"MarkDown{i}" for i in range(1, 6)]
 LAGS = (39, 46, 51, 52, 53)
 
+# all big-4 holiday weeks in one index (the holiday blend uses this too)
+BIG_HOLIDAY_WEEKS = SUPER_BOWL.append([LABOR_DAY, THANKSGIVING, CHRISTMAS])
+
+# Holiday-aligned lags: the big holidays drift across week-of-year numbers,
+# so the plain 52-week lag lands one week off exactly on the 5x-weighted
+# weeks. Align by holiday instead: "this week is Thanksgiving+1 of 2012 ->
+# look at Thanksgiving+1 of 2011". Offset ranges are capped so the
+# Thanksgiving (max +1) and Christmas (min -3) windows never overlap.
+_HOLIDAY_OFFSETS = {
+    "superbowl": (SUPER_BOWL, range(-2, 2)),
+    "laborday": (LABOR_DAY, range(-2, 2)),
+    "thanksgiving": (THANKSGIVING, range(-2, 2)),
+    "christmas": (CHRISTMAS, range(-3, 2)),
+}
+
+
+def _build_holiday_maps():
+    align, relpos = {}, {}
+    for dates, offsets in _HOLIDAY_OFFSETS.values():
+        dates = list(dates)
+        for off in offsets:
+            delta = pd.Timedelta(days=7 * off)
+            for cur in dates:
+                relpos[cur + delta] = off
+            for prev, cur in zip(dates[:-1], dates[1:]):
+                align[cur + delta] = prev + delta
+    return align, relpos
+
+
+_HOLIDAY_ALIGN, _HOLIDAY_RELPOS = _build_holiday_maps()
+
 STORE_CATS = list(range(1, 46))
 DEPT_CATS = list(range(1, 100))
 TYPE_CATS = ["A", "B", "C"]
@@ -45,11 +76,15 @@ def make_xyw(df):
 
 
 class WalmartPreprocessor(BaseEstimator, TransformerMixin):
-    def __init__(self, features_df=None, stores_df=None):
-        # kept as constructor params so they get pickled with the pipeline:
-        # the registered model is fully self-contained.
+    def __init__(self, features_df=None, stores_df=None, holiday_lags=False):
+        # features_df/stores_df kept as constructor params so they get pickled
+        # with the pipeline: the registered model is fully self-contained.
+        # holiday_lags: aligned-by-holiday lag features. Fold-1 ablation showed
+        # they HURT (holiday MAE 2355 -> 2464; one aligned year is too noisy,
+        # the model over-trusts it), so default off; kept for the ablation story.
         self.features_df = features_df
         self.stores_df = stores_df
+        self.holiday_lags = holiday_lags
 
     def fit(self, X, y):
         hist = X[["Store", "Dept", "Date"]].copy()
@@ -113,6 +148,18 @@ class WalmartPreprocessor(BaseEstimator, TransformerMixin):
             lagged = lagged.rename(columns={"Weekly_Sales": f"lag_{L}"})
             out = out.merge(lagged, on=["Store", "Dept", "Date"], how="left")
         out["yearly_smooth"] = out[["lag_51", "lag_52", "lag_53"]].mean(axis=1)
+
+        if self.holiday_lags:
+            # holiday-aligned lag: same series, same position relative to the
+            # PREVIOUS year's holiday (~52-53 weeks back, so still leak-free)
+            out["hol_relpos"] = d.map(_HOLIDAY_RELPOS).fillna(9).astype(int)
+            out["_hol_aligned_date"] = d.map(_HOLIDAY_ALIGN)
+            aligned = self.history_.rename(
+                columns={"Date": "_hol_aligned_date", "Weekly_Sales": "hol_lag_1y"}
+            )
+            out = out.merge(
+                aligned, on=["Store", "Dept", "_hol_aligned_date"], how="left"
+            ).drop(columns="_hol_aligned_date")
 
         out = out.merge(self.series_stats_, on=["Store", "Dept"], how="left")
         out = out.merge(

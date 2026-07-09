@@ -104,7 +104,7 @@ Patch-ტოკენიზაცია + channel-independent ტრანსფ
 | ვარიანტი | Kaggle Public | Kaggle Private |
 |---|---|---|
 | post-processing-ის გარეშე | 2765.77 | 2845.19 |
-| + Christmas shift | `<public>` | 2591.81 |
+| + Christmas shift | 2534.89 | 2591.81 |
 | + shift + blend ოთხივე დღესასწაულზე (w=0.5) | 2604.08 | 2671.29 |
 
 ორი გაკვეთილი leaderboard-იდან:

@@ -84,7 +84,13 @@ Kaggle (round 1 + Christmas shift): public **2507.37** / private **2567.09**.
 **Kaggle: public 2540.86 / private 2573.67** — private-ზე თითქმის დაეწია ტუნინგებულ LightGBM-ს (2571.82). დასკვნა presentation-ისთვის: ძლიერად სეზონურ მონაცემებზე წლიური პატერნი თითქმის ხაზოვანი სტრუქტურაა და 8K-პარამეტრიანი ხაზოვანი მოდელიც საკმარისია მის დასაჭერად.
 
 ### 4.4 PatchTST
-Patch-ტოკენიზაცია + channel-independent ტრანსფორმერი. `<შედეგები>`
+Patch-ტოკენიზაცია (დროითი მწკრივი „64 სიტყვად") + channel-independent ტრანსფორმერი + RevIN ნორმალიზაცია (`neuralforecast` ბიბლიოთეკით, GPU T4). შეზღუდვა, რომელიც პატიოსნად დავაფიქსირეთ: ბიბლიოთეკის ლოსში 5x holiday-წონების ჩადება არ გამოდის — ტრენინგი უბრალო MAE-თია.
+
+**Patch-len ablation (Fold 1, input 52):** patch 16/stride 8 → WMAE 2765 (holiday MAE 3933!); patch 8/stride 4 → 2905. blend-ით (w=0.75) → **2291**.
+
+**Kaggle (input 104, 3000 steps + shift + blend): public 2589.37 / private 2649.71.**
+
+დასკვნა: ტრანსფორმერი აქ **წააგო როგორც LightGBM-თან (2571.8), ისე 50-ხაზიან DLinear-თანაც (2573.7)** — DLinear-ის სტატიის თეზისი ჩვენს მონაცემებზე დადასტურდა. მიზეზები: (1) მცირე მონაცემი per series (143 კვირა) ტრანსფორმერის ტევადობისთვის; (2) channel-independence ეგზოგენურ ფიჩერებს (markdown, დღესასწაულები) ვერ ხედავს; (3) holiday-კვირებზე განსაკუთრებით სუსტია (holiday MAE 3933 blend-ამდე) — სწორედ იქ, სადაც მეტრიკა 5x წონას იძლევა.
 
 ### 4.5 ARIMA / SARIMA (თეორია + დემო)
 სრული კლასიკური workflow ერთ დიდ სერიაზე (Store 20 / Dept 92): ADF ტესტი (ნედლი p=0.53 → არასტაციონარული; 1-ჯერ დიფერენცირებული p≈0 → d=1), ACF/PACF, შემდეგ:
@@ -106,8 +112,8 @@ Patch-ტოკენიზაცია + channel-independent ტრანსფ
 | LightGBM (r1 + shift) | 1925 | 2507.37 | 2567.09 |
 | **LightGBM (final: cfg0 + shift + noXmas blend)** | **1850** | **2503.99** | **2571.82** |
 | DLinear (+ shift + blend w=0.75) | 2641* | 2540.86 | 2573.67 |
-| PatchTST | | | |
-| SARIMA | | | |
+| PatchTST (+ shift + blend w=0.75) | 2291* | 2589.37 | 2649.71 |
+| SARIMA (hybrid top-50 + naive) | 2398 | | |
 | XGBoost | | | |
 | N-BEATS | | | |
 | Prophet | | | |

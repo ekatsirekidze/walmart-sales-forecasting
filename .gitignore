@@ -2,6 +2,7 @@ data/
 .venv/
 mlruns/
 mlartifacts/
+mlflow.db
 __pycache__/
 .ipynb_checkpoints/
 *.zip

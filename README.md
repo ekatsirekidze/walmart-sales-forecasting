@@ -66,6 +66,12 @@ Kaggle (round 1 + Christmas shift): public **2507.37** / private **2567.09**.
 - *Holiday-aligned lags* (lag-ი მოსწორებული დღესასწაულის თარიღზე და არა ფიქსირებულ 52 კვირაზე) — **უარყოფითი შედეგი**: holiday MAE 2355→2464. ერთი მოსწორებული წელი ზედმეტად ხმაურიანია და მოდელი მას ბრმად ენდობა. დოკუმენტირებულია MLflow-ში (`LightGBM_HolidayLags_Ablation`), ფიჩერი გამორთულია.
 - *Naive blend holiday-კვირებზე*: დიდი-4 დღესასწაულის კვირებზე პროგნოზი = (1−w)·LightGBM + w·naive-lag52. Fold 1-ზე საუკეთესო w=0.6 → **WMAE 1866.5, holiday MAE 2158.9** — პირველად ვჯობნით naive-ს holiday-კვირებზეც.
 
+**Round 3 (საბოლოო):** blend მხოლოდ SB/LD/TG კვირებზე (შობის გარეშე), ორივე კონფიგი გაიგზავნა:
+- **cfg0 + shift + blend: public 2503.99 / private 2571.82 ← საბოლოო LightGBM**
+- cfg1 + shift + blend: public 2510.80 / private 2579.88
+
+დაკვირვება: no-Christmas blend-მა ლოკალურად კარგი მოგება მისცა (holiday MAE 2159→2102), leaderboard-ზე კი ≈ ნეიტრალური აღმოჩნდა (2507→2504 public) — Fold-1-ის დღესასწაულები (TG'11/SB'12) ტესტის დღესასწაულებს (TG'12/SB'13) იდეალურად ვერ წარმოადგენს. ერთი ვალიდაციის წლის ლიმიტი პატიოსნად უნდა აღიარო.
+
 მოდელი ინახება Registry-ში (`walmart-lightgbm`), **cloudpickle** ფორმატით — MLflow-ის default skops ფორმატი custom preprocessor-ს ვერ ასერიალიზებს.
 
 ### 4.3 DLinear
@@ -86,7 +92,7 @@ Patch-ტოკენიზაცია + channel-independent ტრანსფ
 |---|---|---|---|
 | Seasonal Naive | 2031 | 2945.64 | 3027.85 |
 | LightGBM (r1 + shift) | 1925 | 2507.37 | 2567.09 |
-| LightGBM (r2 + shift + blend w=0.6) | 1866 | | |
+| **LightGBM (final: cfg0 + shift + noXmas blend)** | **1850** | **2503.99** | **2571.82** |
 | DLinear | | | |
 | PatchTST | | | |
 | SARIMA | | | |
